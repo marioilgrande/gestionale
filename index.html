@@ -1,384 +1,775 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionale Negozi</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Portale Affiliazioni</title>
 
-        h1 {
-            text-align: center;
-            color: #007BFF;
-            margin: 20px 0;
-        }
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        .container {
-    margin: 20px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    overflow-x: auto;
-    display: flex;
-    justify-content: center; /* Centra il contenuto */
-    align-items: center;    /* Allinea verticalmente */
-}
-.table-wrapper {
-    display: inline-block; /* Mantiene la dimensione in base alla tabella */
-    background-color: white;
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+  <!-- SheetJS per export Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
+  <style>
+    :root{
+      --tiffany:#0ABAB5;
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --border:#e5e7eb;
+      --shadow: 0 12px 26px rgba(15,23,42,.08);
 
-        .search-container {
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+      /* status colors */
+      --ok:#16a34a;      /* verde */
+      --warn:#f59e0b;    /* giallo/arancio */
+      --ko:#ef4444;      /* rosso */
 
-        .search-container input {
-            padding: 10px;
-            width: 60%;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
+      /* BRAND HEX (esatti) */
+      --brand-acea: #05A8B0;
+      --brand-sky: #CF01CF;
+      --brand-fastweb: #E4B002;
+      --brand-ho: #5F58A1;
+      --brand-tiscali: #3B2783;
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
+      /* TINT */
+      --acea-tint: rgba(5,168,176,.22);
+      --sky-tint: rgba(207,1,207,.20);
+      --fastweb-tint: rgba(228,176,2,.24);
+      --ho-tint: rgba(95,88,161,.20);
+      --tiscali-tint: rgba(59,39,131,.20);
 
-        th, td {
-            border: 1px solid #ddd;
-            text-align: center;
-            padding: 12px;
-        }
+      --acea-tint-h: rgba(5,168,176,.30);
+      --sky-tint-h: rgba(207,1,207,.28);
+      --fastweb-tint-h: rgba(228,176,2,.32);
+      --ho-tint-h: rgba(95,88,161,.28);
+      --tiscali-tint-h: rgba(59,39,131,.28);
+    }
 
-        th {
-            background-color: #007BFF;
-            color: white;
-        }
+    body{ background:var(--bg); color:var(--text); }
 
-        .btn {
-            padding: 10px 15px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
+    .topbar{
+      background: linear-gradient(90deg, var(--tiffany), #078f8a);
+      color:#fff;
+      padding:14px 16px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .brand-badge{
+      font-weight:900;
+      font-size:13px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.25);
+      letter-spacing:.4px;
+    }
 
-        .btn:hover {
-            background-color: #0056b3;
-        }
+    .cardx{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      box-shadow: var(--shadow);
+    }
 
-        .btn-red {
-            background-color: #dc3545;
-        }
+    .muted{ color:var(--muted); }
+    .tiny{ font-size:12px; }
 
-        .btn-red:hover {
-            background-color: #c82333;
-        }
+    .btn-tiffany{
+      background:var(--tiffany);
+      border-color:var(--tiffany);
+      color:#fff;
+      font-weight:800;
+    }
+    .btn-tiffany:hover{ background:#089a94; border-color:#089a94; color:#fff; }
 
-        .btn-yellow {
-            background-color: #ffc107;
-            color: black;
-        }
+    .table thead th{
+      background: #0b1324;
+      color:#fff;
+      border-color:#0b1324 !important;
+      font-size:12px;
+      letter-spacing:.2px;
+      vertical-align:middle;
+    }
+    .table tbody td{ vertical-align:middle; }
 
-        .btn-yellow:hover {
-            background-color: #e0a800;
-        }
+    .step-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:190px;
+    }
+    .step-row{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .step-row input[type="date"]{
+      max-width: 160px;
+      font-size:12px;
+      padding:4px 6px;
+    }
 
-        .btn-container {
-            text-align: center;
-        }
-	.counter {
-   	    display: inline-block;
-	    margin-left: 20px;
-   	    font-size: 16px;
-	    color: #007BFF;
-    	    font-weight: bold;
-	}
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#fff;
+      font-weight:900;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--ko);
+    }
+    .dot.ok{ background: var(--ok); }
+    .dot.warn{ background: var(--warn); }
+    .dot.ko{ background: var(--ko); }
 
-    </style>
+    .sticky-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    @media (max-width: 992px){
+      .sticky-actions{ justify-content:flex-start; }
+      .step-wrap{ min-width: 170px; }
+    }
+
+    /* ===== BRAND ROW COLORS (robusto con Bootstrap) ===== */
+    .table tbody tr.brand-row > *{
+      background-color: #fff;
+      transition: background-color .12s ease;
+    }
+
+    .table tbody tr.brand-ACEA > *{ background-color: var(--acea-tint) !important; }
+    .table.table-hover tbody tr.brand-ACEA:hover > *{ background-color: var(--acea-tint-h) !important; }
+
+    .table tbody tr.brand-SKY > *{ background-color: var(--sky-tint) !important; }
+    .table.table-hover tbody tr.brand-SKY:hover > *{ background-color: var(--sky-tint-h) !important; }
+
+    .table tbody tr.brand-FASTWEB > *{ background-color: var(--fastweb-tint) !important; }
+    .table.table-hover tbody tr.brand-FASTWEB:hover > *{ background-color: var(--fastweb-tint-h) !important; }
+
+    .table tbody tr.brand-HO > *{ background-color: var(--ho-tint) !important; }
+    .table.table-hover tbody tr.brand-HO:hover > *{ background-color: var(--ho-tint-h) !important; }
+
+    .table tbody tr.brand-TISCALI > *{ background-color: var(--tiscali-tint) !important; }
+    .table.table-hover tbody tr.brand-TISCALI:hover > *{ background-color: var(--tiscali-tint-h) !important; }
+
+    .table tbody tr.brand-row > td:first-child{
+      border-left: 6px solid transparent !important;
+    }
+    .table tbody tr.brand-ACEA > td:first-child{ border-left-color: var(--brand-acea) !important; }
+    .table tbody tr.brand-SKY > td:first-child{ border-left-color: var(--brand-sky) !important; }
+    .table tbody tr.brand-FASTWEB > td:first-child{ border-left-color: var(--brand-fastweb) !important; }
+    .table tbody tr.brand-HO > td:first-child{ border-left-color: var(--brand-ho) !important; }
+    .table tbody tr.brand-TISCALI > td:first-child{ border-left-color: var(--brand-tiscali) !important; }
+
+    .badge-brand{
+      font-weight:950;
+      letter-spacing:.3px;
+      border: 1px solid rgba(0,0,0,.08);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      display:inline-block;
+      line-height: 1;
+    }
+    .badge-ACEA{ background: var(--brand-acea) !important; color:#fff !important; }
+    .badge-SKY{ background: var(--brand-sky) !important; color:#fff !important; }
+    .badge-FASTWEB{ background: var(--brand-fastweb) !important; color:#111827 !important; }
+    .badge-HO{ background: var(--brand-ho) !important; color:#fff !important; }
+    .badge-TISCALI{ background: var(--brand-tiscali) !important; color:#fff !important; }
+
+    .brand-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid var(--border);
+      font-weight:900;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .brand-dot{
+      width:10px;height:10px;border-radius:999px;
+      background:#111;
+      box-shadow: 0 0 0 3px rgba(0,0,0,.06);
+    }
+    .dot-ACEA{ background: var(--brand-acea); }
+    .dot-SKY{ background: var(--brand-sky); }
+    .dot-FASTWEB{ background: var(--brand-fastweb); }
+    .dot-HO{ background: var(--brand-ho); }
+    .dot-TISCALI{ background: var(--brand-tiscali); }
+  </style>
 </head>
+
 <body>
-    <h1>Gestionale Negozi</h1>
-<div class="btn-container">
-	<div class="search-container" style="padding: 30px">
-            <input type="text" id="searchInput" placeholder="Cerca negozio..." onkeyup="searchTable()">
-            <button class="btn" onclick="exportToCSV()">Esporta CSV</button>
-            <button class="btn" onclick="saveData()">Salva Dati</button>
+  <div class="topbar">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="brand-badge">PORTALE AFFILIAZIONI</div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container-fluid my-4">
+
+    <!-- DASHBOARD -->
+    <div class="cardx p-3 p-md-4 mb-3">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+        <div>
+          <div class="fw-bold fs-5">Dashboard</div>
+          <div class="muted tiny">Riepilogo affiliazioni del mese selezionato (data inserimento affiliazione).</div>
         </div>
-	    <div id="storeCounter" class="counter">Totale Negozi: 0</div>
-            <input type="text" id="newStoreName" placeholder="Nome negozio" style="padding: 10px; width: 200px;">
-            <button class="btn" onclick="addStore()">Aggiungi Negozio</button>
-            <button class="btn" onclick="addColumn()">Aggiungi Colonna</button>
+        <div class="d-flex align-items-center gap-2">
+          <div class="tiny fw-bold muted">Mese di riferimento</div>
+          <input type="month" class="form-control form-control-sm" id="dashMonth" style="max-width:180px;">
         </div>
-        <div class="btn-container">
-            <button class="btn btn-yellow" onclick="renameColumn()">Rinomina Colonna</button>
-            <button class="btn btn-red" onclick="deleteColumn()">Elimina Colonna</button>
-        </div>
-    <div class="container">
-       
-        <table id="storeTable">
-            <thead>
-                <tr>
-                    <th>Negozio</th>
-                    <th>Formazione</th>
-                    <th>Materiale POP</th>
-                    <th>Fatturazione Automatica</th>
-                    <th>Note</th>
-                    <th>Azioni</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Dati caricati dinamicamente -->
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td id="totalStores">Totale Negozi: 0</td>
-                    <td id="totalFormazione">0</td>
-                    <td id="totalMateriale">0</td>
-                    <td id="totalFatturazione">0</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <span class="status-pill">
+          <span class="dot ok"></span>
+          Totale mese: <span class="mono" id="dashTotalMonth">0</span>
+        </span>
+
+        <span class="brand-pill"><span class="brand-dot dot-ACEA"></span> ACEA: <span class="mono" id="dashACEA">0</span></span>
+        <span class="brand-pill"><span class="brand-dot dot-SKY"></span> SKY: <span class="mono" id="dashSKY">0</span></span>
+        <span class="brand-pill"><span class="brand-dot dot-FASTWEB"></span> FASTWEB: <span class="mono" id="dashFASTWEB">0</span></span>
+        <span class="brand-pill"><span class="brand-dot dot-HO"></span> HO: <span class="mono" id="dashHO">0</span></span>
+        <span class="brand-pill"><span class="brand-dot dot-TISCALI"></span> TISCALI: <span class="mono" id="dashTISCALI">0</span></span>
+      </div>
     </div>
 
-    <script>
-        const STORAGE_KEY = "negoziTableData";
+    <!-- Inserimento -->
+    <div class="cardx p-3 p-md-4 mb-3">
+      <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-2">
+        <div>
+          <div class="fw-bold fs-5">Nuova Affiliazione</div>
+          <div class="muted tiny">Inserisci negozio e data. Gli step si gestiscono nella tabella (spunta + data automatica modificabile).</div>
+        </div>
+        <div class="sticky-actions">
+          <button class="btn btn-outline-dark btn-sm" id="btnExportXlsx">Export Excel (.xlsx)</button>
+          <button class="btn btn-outline-dark btn-sm" id="btnExportJson">Export JSON (Backup)</button>
+          <label class="btn btn-outline-dark btn-sm mb-0">
+            Import JSON
+            <input type="file" id="importJsonInput" accept="application/json" hidden>
+          </label>
+          <button class="btn btn-outline-danger btn-sm" id="btnResetAll">Reset (cancella dati locali)</button>
+        </div>
+      </div>
 
-        function saveData() {
-            const headers = Array.from(document.querySelectorAll("#storeTable thead th")).map(th => th.textContent.trim());
-            const rows = Array.from(document.querySelectorAll("#storeTable tbody tr")).map(row =>
-                Array.from(row.cells).map(cell => {
-                    const input = cell.querySelector("input, textarea");
-                    if (input) {
-                        return input.type === "checkbox" ? input.checked : input.value;
-                    }
-                    return cell.textContent.trim();
-                })
-            );
-            const totals = Array.from(document.querySelectorAll("#storeTable tfoot td")).map(td => td.textContent.trim());
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ headers, rows, totals }));
-            alert("Dati salvati con successo!");
-        }
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-2">
+          <label class="form-label tiny fw-bold">Brand</label>
+          <select class="form-select" id="inBrand">
+            <option value="ACEA">ACEA</option>
+            <option value="SKY">SKY</option>
+            <option value="FASTWEB">FASTWEB</option>
+            <option value="HO">HO</option>
+            <option value="TISCALI">TISCALI</option>
+          </select>
+        </div>
 
-        function loadData() {
-            const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-            const { headers, rows, totals } = data;
+        <div class="col-12 col-md-5">
+          <label class="form-label tiny fw-bold">Nome Negozio</label>
+          <input class="form-control" id="inShop" placeholder="Es. AF Store – Torino Centro">
+        </div>
 
-            if (headers) {
-                const headerRow = document.querySelector("#storeTable thead tr");
-                headerRow.innerHTML = headers.map(header => `<th>${header}</th>`).join("");
-            }
+        <div class="col-12 col-md-3">
+          <label class="form-label tiny fw-bold">Data inserimento affiliazione</label>
+          <input class="form-control" id="inCreatedDate" type="date">
+        </div>
 
-            if (rows) {
-                const tableBody = document.querySelector("#storeTable tbody");
-                tableBody.innerHTML = "";
-                rows.forEach(rowData => {
-                    const row = tableBody.insertRow();
-                    row.innerHTML = rowData
-                        .map((cellData, i) => {
-                            if (i === rowData.length - 1) {
-                                return `
-                                    <td>
-                                        <button class="btn btn-yellow" onclick="renameStore(this)">Rinomina</button>
-                                        <button class="btn btn-red" onclick="deleteStore(this)">Elimina</button>
-                                    </td>`;
-                            } else if (typeof cellData === "boolean") {
-                                return `<td><input type="checkbox" ${cellData ? "checked" : ""} onchange="updateTotals()"></td>`;
-                            } else if (i === rowData.length - 2) {
-                                return `<td><textarea onchange="saveData()">${cellData}</textarea></td>`;
-                            } else {
-                                return `<td>${cellData}</td>`;
-                            }
-                        })
-                        .join("");
-                });
-            }
+        <div class="col-12 col-md-2 d-grid">
+          <button class="btn btn-tiffany" id="btnAdd">Aggiungi</button>
+        </div>
+      </div>
+    </div>
 
-            if (totals) {
-                const footerRow = document.querySelector("#storeTable tfoot tr");
-                footerRow.innerHTML = totals.map(total => `<td>${total || ""}</td>`).join("");
-            }
+    <!-- Filtri -->
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <div class="cardx p-3">
+          <div class="fw-bold mb-2">Filtri</div>
+          <div class="row g-2">
+            <div class="col-12 col-md-3">
+              <label class="form-label tiny fw-bold">Brand</label>
+              <select class="form-select" id="fBrand">
+                <option value="">Tutti</option>
+                <option value="ACEA">ACEA</option>
+                <option value="SKY">SKY</option>
+                <option value="FASTWEB">FASTWEB</option>
+                <option value="HO">HO</option>
+                <option value="TISCALI">TISCALI</option>
+              </select>
+            </div>
 
-            updateTotals();
-        }
+            <div class="col-12 col-md-6">
+              <label class="form-label tiny fw-bold">Ricerca (negozio)</label>
+              <input class="form-control" id="fSearch" placeholder="Cerca per nome negozio...">
+            </div>
 
-        function updateTotals() {
-            const rows = document.querySelectorAll("#storeTable tbody tr");
-            const totals = document.querySelectorAll("#storeTable tfoot td");
+            <div class="col-12 col-md-3">
+              <label class="form-label tiny fw-bold">Stato</label>
+              <select class="form-select" id="fStatus">
+                <option value="">Tutti</option>
+                <option value="DA AVVIARE">DA AVVIARE</option>
+                <option value="INVIATA">INVIATA</option>
+                <option value="FIRMATO">FIRMATO</option>
+                <option value="ATTIVO">ATTIVO</option>
+                <option value="COMPLETATO">COMPLETATO</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            totals.forEach((cell, index) => {
-                if (index > 0 && index < totals.length - 2) cell.textContent = "0";
-            });
+    <!-- Tabella -->
+    <div class="cardx p-3">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+        <div class="fw-bold">Elenco Affiliazioni</div>
+        <div class="muted tiny">Bollino: DA AVVIARE rosso, INVIATA giallo, altri stati verdi.</div>
+      </div>
 
-	// Calcola e aggiorna il totale dei negozi
-    		const totalStores = rows.length;
-    		document.getElementById("storeCounter").textContent = `Totale Negozi: ${totalStores}`;
-    		totals[0].textContent = `Totale Negozi: ${totalStores}`;
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0" id="tbl">
+          <thead>
+            <tr>
+              <th style="min-width:110px;">Brand</th>
+              <th style="min-width:260px;">Nome Negozio</th>
+              <th style="min-width:160px;">Data Inserimento</th>
+              <th>Affiliazione inviata</th>
+              <th>Contratto firmato</th>
+              <th>Credenziali arrivate</th>
+              <th>Formazione fatta</th>
+              <th>Materiale POP</th>
+              <th style="min-width:140px;">Stato</th>
+              <th style="min-width:90px;">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
 
-            rows.forEach(row => {
-                row.querySelectorAll("td input[type='checkbox']").forEach((checkbox, colIndex) => {
-                    if (checkbox.checked) {
-                        totals[colIndex + 1].textContent = parseInt(totals[colIndex + 1].textContent) + 1;
-                    }
-                });
-            });
+  <script>
+    const LS_KEY = "affiliate_tracker_v1";
 
-            document.getElementById("totalStores").textContent = `Totale Negozi: ${rows.length}`;
-            saveData();
-        }
+    const STEPS = [
+      { key: "sent",     label: "Affiliazione inviata" },
+      { key: "signed",   label: "Contratto firmato" },
+      { key: "creds",    label: "Credenziali arrivate" },
+      { key: "training", label: "Formazione fatta" },
+      { key: "pop",      label: "Materiale POP" }
+    ];
 
-        function addStore() {
-            const storeName = document.getElementById("newStoreName").value.trim();
-            if (!storeName) {
-                alert("Inserisci un nome valido per il negozio!");
-                return;
-            }
+    function uuid(){
+      return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+    }
 
-            const tableBody = document.querySelector("#storeTable tbody");
-            const colCount = document.querySelector("#storeTable thead tr").cells.length - 3;
+    function todayISO(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
+    }
 
-            const row = tableBody.insertRow();
-            row.innerHTML = `
-                <td>${storeName}</td>
-                ${Array.from({ length: colCount }, () => '<td><input type="checkbox" onchange="updateTotals()"></td>').join("")}
-                <td><textarea placeholder="Aggiungi note..." onchange="saveData()"></textarea></td>
-                <td>
-                    <button class="btn btn-yellow" onclick="renameStore(this)">Rinomina</button>
-                    <button class="btn btn-red" onclick="deleteStore(this)">Elimina</button>
-                </td>`;
-            sortTable();
-            updateTotals();
-        }
+    function currentMonthISO(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      return `${y}-${m}`;
+    }
 
-        function sortTable() {
-            const rows = Array.from(document.querySelectorAll("#storeTable tbody tr"));
-            rows.sort((a, b) => {
-                const nameA = a.cells[0].textContent.trim().toLowerCase();
-                const nameB = b.cells[0].textContent.trim().toLowerCase();
-                return nameA.localeCompare(nameB);
-            });
+    function monthKeyFromDateISO(dateISO){
+      if(!dateISO || typeof dateISO !== "string" || dateISO.length < 7) return "";
+      return dateISO.slice(0,7);
+    }
 
-            rows.forEach(row => document.querySelector("#storeTable tbody").appendChild(row));
-            saveData();
-        }
+    function loadData(){
+      try{
+        const raw = localStorage.getItem(LS_KEY);
+        if(!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      }catch(e){
+        console.warn("Errore lettura storage", e);
+        return [];
+      }
+    }
 
-        function addColumn() {
-            const columnName = prompt("Nome della nuova colonna:");
-            if (!columnName) return;
+    function saveData(){
+      localStorage.setItem(LS_KEY, JSON.stringify(state.items));
+    }
 
-            const headerRow = document.querySelector("#storeTable thead tr");
-            const footerRow = document.querySelector("#storeTable tfoot tr");
+    function normalizeItem(x){
+      const item = {
+        id: x.id || uuid(),
+        brand: (x.brand || "ACEA").toUpperCase(),
+        shop: (x.shop || "").trim(),
+        createdDate: x.createdDate || todayISO(),
+        steps: {}
+      };
 
-            const colIndex = headerRow.cells.length - 2;
-            headerRow.insertCell(colIndex).outerHTML = `<th>${columnName}</th>`;
-
-            document.querySelectorAll("#storeTable tbody tr").forEach(row => {
-                row.insertCell(colIndex).innerHTML = '<input type="checkbox" onchange="updateTotals()">';
-            });
-
-            footerRow.insertCell(colIndex).textContent = "0";
-            saveData();
-        }
-
-        function renameColumn() {
-                        const columnIndex = prompt("Numero della colonna da rinominare (escluso Azioni):");
-            if (!columnIndex || isNaN(columnIndex)) return;
-
-            const headerCell = document.querySelector(`#storeTable thead th:nth-child(${columnIndex})`);
-            if (headerCell) {
-                const newName = prompt("Nuovo nome della colonna:");
-                if (newName) {
-                    headerCell.textContent = newName.trim();
-                    saveData();
-                }
-            }
-        }
-
-        function deleteColumn() {
-            const columnIndex = prompt("Numero della colonna da eliminare (escluso Azioni):");
-            if (!columnIndex || isNaN(columnIndex)) return;
-
-            document.querySelectorAll("#storeTable tr").forEach(row => {
-                const cell = row.cells[columnIndex - 1];
-                if (cell) cell.remove();
-            });
-
-            saveData();
-            updateTotals();
-        }
-
-        function exportToCSV() {
-            const rows = Array.from(document.querySelectorAll("#storeTable tr")).map(row => {
-                return Array.from(row.cells).map(cell => {
-                    const input = cell.querySelector("input, textarea");
-                    if (input) {
-                        if (input.type === "checkbox") return input.checked ? "1" : "0";
-                        return `"${input.value}"`;
-                    }
-                    return `"${cell.textContent.trim()}"`;
-                }).join(",");
-            }).join("\n");
-
-            const blob = new Blob([rows], { type: "text/csv" });
-            const url = URL.createObjectURL(blob);
-
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "negozi.csv";
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function renameStore(button) {
-            const row = button.closest("tr");
-            const cell = row.cells[0];
-            const newName = prompt("Inserisci il nuovo nome del negozio:", cell.textContent.trim());
-            if (newName && newName.trim() !== "") {
-                cell.textContent = newName.trim();
-                sortTable();
-                saveData();
-            }
-        }
-
-        function deleteStore(button) {
-            const row = button.closest("tr");
-            row.remove();
-            updateTotals();
-            saveData();
-        }
-
-        function searchTable() {
-            const input = document.getElementById("searchInput").value.toLowerCase();
-            const rows = document.querySelectorAll("#storeTable tbody tr");
-
-            rows.forEach(row => {
-                const name = row.cells[0].textContent.toLowerCase();
-                row.style.display = name.includes(input) ? "" : "none";
-            });
-        }
-
-        window.onload = function () {
-            loadData();
+      for(const s of STEPS){
+        const src = (x.steps && x.steps[s.key]) ? x.steps[s.key] : {};
+        item.steps[s.key] = {
+          done: !!src.done,
+          date: src.date || (src.done ? todayISO() : "")
         };
-    </script>
+      }
+      return item;
+    }
+
+    const state = {
+      items: loadData().map(normalizeItem),
+      filters: { brand:"", search:"", status:"" },
+      dashMonth: currentMonthISO()
+    };
+
+    const tbody = document.getElementById("tbody");
+
+    const dashMonthEl = document.getElementById("dashMonth");
+    const dashTotalMonthEl = document.getElementById("dashTotalMonth");
+    const dashACEAEl = document.getElementById("dashACEA");
+    const dashSKYEl = document.getElementById("dashSKY");
+    const dashFASTWEBEl = document.getElementById("dashFASTWEB");
+    const dashHOEl = document.getElementById("dashHO");
+    const dashTISCALIEl = document.getElementById("dashTISCALI");
+
+    // === STATO + DOT COLOR ===
+    // DA AVVIARE = rosso
+    // INVIATA = giallo
+    // FIRMATO / ATTIVO / COMPLETATO = verde
+    function statusLabel(item){
+      const sent = !!item.steps.sent?.done;
+      const signed = !!item.steps.signed?.done;
+      const creds = !!item.steps.creds?.done;
+      const training = !!item.steps.training?.done;
+
+      if(training) return { text:"COMPLETATO", dotClass:"ok" };
+      if(creds) return { text:"ATTIVO", dotClass:"ok" };
+      if(signed) return { text:"FIRMATO", dotClass:"ok" };
+      if(sent) return { text:"INVIATA", dotClass:"warn" };
+      return { text:"DA AVVIARE", dotClass:"ko" };
+    }
+
+    function applyFilters(items){
+      const {brand, search, status} = state.filters;
+      const q = (search || "").trim().toLowerCase();
+
+      return items.filter(it => {
+        if(brand && it.brand !== brand) return false;
+        if(q && !it.shop.toLowerCase().includes(q)) return false;
+        if(status){
+          const st = statusLabel(it).text;
+          if(st !== status) return false;
+        }
+        return true;
+      });
+    }
+
+    function renderDashboard(){
+      const month = state.dashMonth;
+      const counts = { ACEA:0, SKY:0, FASTWEB:0, HO:0, TISCALI:0 };
+      let total = 0;
+
+      for(const it of state.items){
+        if(monthKeyFromDateISO(it.createdDate) === month){
+          total++;
+          if(counts[it.brand] !== undefined) counts[it.brand]++;
+        }
+      }
+
+      dashTotalMonthEl.textContent = total;
+      dashACEAEl.textContent = counts.ACEA;
+      dashSKYEl.textContent = counts.SKY;
+      dashFASTWEBEl.textContent = counts.FASTWEB;
+      dashHOEl.textContent = counts.HO;
+      dashTISCALIEl.textContent = counts.TISCALI;
+    }
+
+    function render(){
+      const filtered = applyFilters(state.items);
+      renderDashboard();
+
+      tbody.innerHTML = "";
+
+      const sorted = [...filtered].sort((a,b) => (b.createdDate||"").localeCompare(a.createdDate||""));
+
+      for(const item of sorted){
+        const tr = document.createElement("tr");
+        tr.classList.add("brand-row", `brand-${item.brand}`);
+
+        const tdBrand = document.createElement("td");
+        tdBrand.innerHTML = `<span class="badge-brand badge-${escapeHtml(item.brand)}">${escapeHtml(item.brand)}</span>`;
+        tr.appendChild(tdBrand);
+
+        const tdShop = document.createElement("td");
+        tdShop.innerHTML = `<input class="form-control form-control-sm" value="${escapeAttr(item.shop)}" data-act="editShop" data-id="${item.id}">`;
+        tr.appendChild(tdShop);
+
+        const tdCreated = document.createElement("td");
+        tdCreated.innerHTML = `<input class="form-control form-control-sm" type="date" value="${escapeAttr(item.createdDate||"")}" data-act="editCreated" data-id="${item.id}">`;
+        tr.appendChild(tdCreated);
+
+        for(const s of STEPS){
+          const td = document.createElement("td");
+          const st = item.steps[s.key] || {done:false, date:""};
+          td.innerHTML = `
+            <div class="step-wrap">
+              <div class="step-row">
+                <input class="form-check-input" type="checkbox" ${st.done ? "checked":""}
+                  data-act="toggleStep" data-step="${s.key}" data-id="${item.id}">
+                <span class="tiny fw-semibold">${escapeHtml(s.label)}</span>
+              </div>
+              <div class="step-row">
+                <input class="form-control form-control-sm" type="date" value="${escapeAttr(st.date||"")}"
+                  data-act="editStepDate" data-step="${s.key}" data-id="${item.id}" ${st.done ? "" : "disabled"}>
+              </div>
+            </div>
+          `;
+          tr.appendChild(td);
+        }
+
+        const tdStatus = document.createElement("td");
+        const st2 = statusLabel(item);
+        tdStatus.innerHTML = `
+          <span class="status-pill">
+            <span class="dot ${st2.dotClass}"></span>
+            ${escapeHtml(st2.text)}
+          </span>
+        `;
+        tr.appendChild(tdStatus);
+
+        const tdActions = document.createElement("td");
+        tdActions.innerHTML = `<button class="btn btn-outline-danger btn-sm" data-act="delete" data-id="${item.id}">Elimina</button>`;
+        tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
+      }
+
+      saveData();
+    }
+
+    function escapeHtml(str){
+      return String(str || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function escapeAttr(str){ return escapeHtml(str); }
+
+    function getById(id){
+      return state.items.find(x => x.id === id);
+    }
+
+    // Dashboard mese
+    dashMonthEl.value = state.dashMonth;
+    dashMonthEl.addEventListener("change", (e) => {
+      state.dashMonth = e.target.value || currentMonthISO();
+      render();
+    });
+
+    // Default date input
+    document.getElementById("inCreatedDate").value = todayISO();
+
+    // Add
+    document.getElementById("btnAdd").addEventListener("click", () => {
+      const brand = document.getElementById("inBrand").value;
+      const shop = document.getElementById("inShop").value.trim();
+      const createdDate = document.getElementById("inCreatedDate").value || todayISO();
+
+      if(!shop){
+        alert("Inserisci il nome del negozio.");
+        return;
+      }
+
+      const item = normalizeItem({ id: uuid(), brand, shop, createdDate, steps: {} });
+      state.items.unshift(item);
+
+      document.getElementById("inShop").value = "";
+      document.getElementById("inCreatedDate").value = todayISO();
+
+      render();
+    });
+
+    // Table events
+    tbody.addEventListener("input", (e) => {
+      const el = e.target;
+      const act = el.getAttribute("data-act");
+      const id  = el.getAttribute("data-id");
+      if(!act || !id) return;
+
+      const item = getById(id);
+      if(!item) return;
+
+      if(act === "editShop"){
+        item.shop = el.value;
+        saveData();
+      }
+
+      if(act === "editCreated"){
+        item.createdDate = el.value || "";
+        saveData();
+        render();
+      }
+
+      if(act === "editStepDate"){
+        const step = el.getAttribute("data-step");
+        if(!step) return;
+        if(!item.steps[step]) item.steps[step] = {done:false, date:""};
+        item.steps[step].date = el.value || "";
+        saveData();
+      }
+    });
+
+    tbody.addEventListener("change", (e) => {
+      const el = e.target;
+      const act = el.getAttribute("data-act");
+      const id  = el.getAttribute("data-id");
+      if(!act || !id) return;
+
+      const item = getById(id);
+      if(!item) return;
+
+      if(act === "toggleStep"){
+        const step = el.getAttribute("data-step");
+        const checked = !!el.checked;
+
+        if(!item.steps[step]) item.steps[step] = {done:false, date:""};
+        item.steps[step].done = checked;
+
+        if(checked){
+          if(!item.steps[step].date) item.steps[step].date = todayISO();
+        }else{
+          item.steps[step].date = "";
+        }
+        render();
+      }
+    });
+
+    tbody.addEventListener("click", (e) => {
+      const el = e.target;
+      const act = el.getAttribute("data-act");
+      const id  = el.getAttribute("data-id");
+      if(!act || !id) return;
+
+      if(act === "delete"){
+        if(!confirm("Confermi eliminazione riga?")) return;
+        state.items = state.items.filter(x => x.id !== id);
+        render();
+      }
+    });
+
+    // Filters
+    document.getElementById("fBrand").addEventListener("change", (e) => {
+      state.filters.brand = e.target.value;
+      render();
+    });
+    document.getElementById("fSearch").addEventListener("input", (e) => {
+      state.filters.search = e.target.value;
+      render();
+    });
+    document.getElementById("fStatus").addEventListener("change", (e) => {
+      state.filters.status = e.target.value;
+      render();
+    });
+
+    // Export / Import / Reset
+    function downloadFile(filename, content, mime){
+      const blob = new Blob([content], {type: mime});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("btnExportJson").addEventListener("click", () => {
+      const payload = {
+        meta: { app: "affiliate-tracker", version: 1, exportedAt: new Date().toISOString() },
+        items: state.items
+      };
+      downloadFile(`affiliazioni_backup_${todayISO()}.json`, JSON.stringify(payload, null, 2), "application/json");
+    });
+
+    document.getElementById("importJsonInput").addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if(!file) return;
+
+      try{
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        let items = [];
+        if(Array.isArray(parsed)) items = parsed;
+        else if(parsed && Array.isArray(parsed.items)) items = parsed.items;
+        else throw new Error("Formato JSON non valido.");
+
+        const incoming = items.map(normalizeItem);
+        const map = new Map(state.items.map(x => [x.id, x]));
+        for(const it of incoming) map.set(it.id, it);
+        state.items = Array.from(map.values());
+
+        render();
+        alert("Import completato.");
+      }catch(err){
+        console.error(err);
+        alert("Errore import JSON: " + (err?.message || "file non valido"));
+      }finally{
+        e.target.value = "";
+      }
+    });
+
+    document.getElementById("btnExportXlsx").addEventListener("click", () => {
+      const rows = state.items.map(it => {
+        const r = { Brand: it.brand, "Nome Negozio": it.shop, "Data Inserimento": it.createdDate || "" };
+        for(const s of STEPS){
+          r[`${s.label} (Flag)`] = it.steps[s.key]?.done ? "SI" : "NO";
+          r[`${s.label} (Data)`] = it.steps[s.key]?.date || "";
+        }
+        r["Stato"] = statusLabel(it).text;
+        return r;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Affiliazioni");
+      XLSX.writeFile(wb, `affiliazioni_${todayISO()}.xlsx`);
+    });
+
+    document.getElementById("btnResetAll").addEventListener("click", () => {
+      if(!confirm("Questa azione cancella i dati salvati localmente su questo browser/dispositivo. Continuare?")) return;
+      localStorage.removeItem(LS_KEY);
+      state.items = [];
+      render();
+    });
+
+    render();
+  </script>
 </body>
 </html>
